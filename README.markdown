@@ -23,7 +23,10 @@ Usage: python datecalculator.py --help --version --quiet --debug
 
 To Do
 ====================
-- Show difference between dates in 'whole' years and months
+- Show difference between dates in 'whole' years and months ie: birthdays
 - Allow typing in date in From: or To: fields
 - Create and installer/Makefile
+- Add usage examples
+- Add unit tests
+- Add commandline mode
 

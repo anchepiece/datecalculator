@@ -2,7 +2,7 @@
 
 Welcome!
 ====================
-This is the current development version of [datecalculator](http://github.com/anchepeice/datecalculator/).
+This is the current development version of [datecalculator](http://github.com/anchepiece/datecalculator/).
 
 DateCalculator
 ====================

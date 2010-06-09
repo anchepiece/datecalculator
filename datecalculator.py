@@ -71,7 +71,6 @@ except NameError:
   True=1
   False=0
 
-
 # allow disabling of pyc generation. Only works on python >= 2.6
 if os.getenv("PYTHON_NO_OPTIMIZE"):
     try:
@@ -88,6 +87,7 @@ if sys.platform == 'linux2':
         libc.prctl(15, 'datecalculator', 0, 0, 0)
     except:
         pass
+
 #
 # __main__
 #
@@ -95,12 +95,10 @@ def main():
     from resources import main
     global application
     application = main.DateCalculator()
-
 #end def main
 
 if __name__ == "__main__":
     main()
-
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
 

@@ -48,6 +48,7 @@
 import os
 import re
 import sys
+import math
 import time
 import logging
 logger = logging.getLogger(__name__)
@@ -74,8 +75,8 @@ if __name__ == '__main__':
     exit()
 
 class DateCalculator(object):
+
     _application = None
-#    format = '%d/%m/%Y'
     format = '%m/%d/%Y'
 
     def __init__(self):
@@ -147,14 +148,12 @@ class DateCalculator(object):
                 logger.error(e)
                 sys.exit(1)
 
-
             def set_readonly(w):
                 if hasattr(w, "get_children"):
                     for child in w.get_children():
                         set_readonly(child)
-                        if isinstance(child, gtk.Entry):
-                            if not child.get_editable():
-                                child.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse("#cccccc")) #base bg fg
+                        if isinstance(child, gtk.Entry) and not child.get_editable():
+                            child.modify_base(gtk.STATE_NORMAL, gtk.gdk.color_parse("#cccccc"))
             set_readonly(self.window)
 
             # connect signals
@@ -169,21 +168,14 @@ class DateCalculator(object):
                 self.window.set_title('%s %s' % (__fullname__, __version__) )
                 self.window.show_all()
             #start the gui
-            self.mainloop()
+            self.main()
+
         DateCalculator._application = self
 
         # On SIGTERM, quit normally.
         import signal
         signal.signal(signal.SIGTERM, (lambda sig, stack: self.quit()))
     #end def __init__
-
-    def mainloop(self):
-        import gtk
-        try:
-            gtk.main()
-        except KeyboardInterrupt:
-            self.on_keyboard_interrupt()
-    #end def mainloop
 
     def get_command_flags(self, args):
       """
@@ -226,11 +218,11 @@ class DateCalculator(object):
 
     def version(self):
         print r"""
- _           __
-| \ _ _|_ _ /   _  |  _     |  _ _|_ _  __
-|_/(_| |_(/_\__(_| | (_ |_| | (_| |_(_) |   v%s
+         _           __
+        | \ _ _|_ _ /   _  |  _     |  _ _|_ _  __
+        |_/(_| |_(/_\__(_| | (_ |_| | (_| |_(_) |   v%s
 
-""" % __version__
+        """ % __version__
         exit()
     #end def version
 
@@ -262,47 +254,78 @@ class DateCalculator(object):
         exit()
     #end def quit
 
+    def main(self):
+        """
+            Runs the gtk main loop
+        """
+        import gtk
+        try:
+            gtk.main()
+        except KeyboardInterrupt:
+            self.on_keyboard_interrupt()
+    #end def main
+
     def main_init(self):
-#        timestamp = time.localtime()
-#        timestamp = datetime.today()
-        today = datetime.fromtimestamp(time.time())
+        """
+            Initializes start and end date to today's date
+        """
+        today = datetime.today()
+        # today = datetime.fromtimestamp(time.time())
         self.start_date  = today
         self.end_date    = today
+        self.diff_days   = int(0)
+        self.diff_months = int(0)
+        self.diff_years  = int(0)
     #end def init_dates
-
 
     #
     # gui
     #
     def gui_init(self):
+        """
+            Initializes the gui labels and sets calendar
+        """
         # labels
         today = datetime.fromtimestamp(time.time())
         self.today_start.set_property('use-markup', True)
-        self.today_start.set_label('<small>Today: %s</small>' % today.strftime(self.format))
+        self.today_start.set_label(
+            '<small>Today: %s</small>' % today.strftime(self.format))
         self.today_end.set_property('use-markup', True)
-        self.today_end.set_label('<small>Today: %s</small>' % today.strftime(self.format))
+        self.today_end.set_label(
+            '<small>Today: %s</small>' % today.strftime(self.format))
 
         # calendars
-        self.calendar_start.select_month(self.start_date.month-1, self.start_date.year)
+        self.calendar_start.select_month(self.start_date.month-1,
+            self.start_date.year)
         self.calendar_start.select_day(self.start_date.day)
-        self.calendar_end.select_month(self.end_date.month-1, self.end_date.year)
+        self.calendar_end.select_month(self.end_date.month-1,
+            self.end_date.year)
         self.calendar_end.select_day(self.end_date.day)
-        #self.recalulate_dates()
     #end def init_calendars
 
-    def recalulate_dates(self):
+    def gui_update(self):
         """
-        This method is called when any changes are made and will
-        update
+            This method is called when any changes are made and will
+            calculate the difference between dates
         """
-#        logger.debug(self.calendar_start.get_date())
-#        logger.debug(self.calendar_end.get_date())
         (start_year, start_month, start_day) = self.calendar_start.get_date()
         (end_year, end_month, end_day) = self.calendar_end.get_date()
 
         # gtk calendar hack (months start with 0)
         self.start_date = date(start_year, start_month+1, start_day)
         self.end_date = date(end_year, end_month+1, end_day)
+
+        self.recalulate_dates()
+
+        self.entry_days.set_text(str(self.diff_days))
+        self.entry_months.set_text(str(self.diff_months))
+        self.entry_years.set_text(str(self.diff_years))
+    #end def gui_update
+
+    def recalulate_dates(self):
+        """
+            This method recalulates the difference between start and end dates
+        """
 
         logger.debug('start_date : %s' % self.start_date)
         logger.debug('  end_date : %s' % self.end_date)
@@ -319,9 +342,8 @@ class DateCalculator(object):
         diff_years = self.end_date.year - self.start_date.year
         diff_months = self.end_date.month - self.start_date.month
         diff_months = diff_months + diff_years * 12
-        #TODO: should we be using 'whole' years
-        import math
 
+        #TODO: should we be using 'whole' years
         whole_years = 0
         if diff_months < 0:
             whole_years += 1
@@ -330,12 +352,27 @@ class DateCalculator(object):
             whole_years += math.floor(diff_months/12)
 
         whole_months = 0
+        if diff_months < 0:
+            if (self.end_date.day > self.start_date.day):
+                whole_months += 1
+        else:
+            if (self.end_date.day < self.start_date.day):
+                whole_months -= 1
 
-        logger.debug('Diff -> years:%s months:%s days:%s whole_years:%s whole_months:%s', diff_years, diff_months, diff_days, whole_years, whole_months)
+        whole_months += self.end_date.month - self.start_date.month
+        whole_months = whole_months + whole_years * 12
 
-        self.entry_days.set_text(str(diff_days))
-        self.entry_months.set_text(str(diff_months))
-        self.entry_years.set_text(str(diff_years))
+        whole_years = math.floor(whole_months/12)
+
+        logger.debug(
+            'Difference -> years:%s months:%s days:%s whole_years:%s whole_months:%s',
+            diff_years, diff_months, diff_days, whole_years, whole_months)
+
+        self.diff_days = int(diff_days)
+        self.diff_months = int(whole_months)
+        self.diff_years = int(whole_years)
+        logger.info('Difference -> years:%s months:%s days:%s',
+            self.diff_years, self.diff_months, self.diff_days)
     #end def recalulate_dates
 
     #
@@ -356,24 +393,26 @@ class DateCalculator(object):
     #end def on_window_destroy
 
     def on_calendar_start_day_selected(self, w):
-        self.recalulate_dates()
+        self.gui_update()
     #end def on_calendar_start_day_selected
 
     def on_calendar_end_day_selected(self, w):
-        self.recalulate_dates()
+        self.gui_update()
     #end def on_calendar_end_day_selected
 
     def on_eventbox_today_start_button_press_event(self, w, event):
         today = datetime.fromtimestamp(time.time())
         self.start_date  = today
-        self.calendar_start.select_month(self.start_date.month-1, self.start_date.year)
+        self.calendar_start.select_month(self.start_date.month-1,
+            self.start_date.year)
         self.calendar_start.select_day(self.start_date.day)
     #end def on_today_start_button_press_event
 
     def on_eventbox_today_end_button_press_event(self, w, event):
         today = datetime.fromtimestamp(time.time())
         self.end_date  = today
-        self.calendar_end.select_month(self.end_date.month-1, self.end_date.year)
+        self.calendar_end.select_month(self.end_date.month-1,
+            self.end_date.year)
         self.calendar_end.select_day(self.end_date.day)
     #end def on_today_end_button_press_event
 

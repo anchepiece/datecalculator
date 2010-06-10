@@ -23,13 +23,13 @@ Usage: python datecalculator.py --help --version --quiet --debug
 
 To Do
 ====================
-
 - Create and installer/Makefile
 - Add usage examples
 - Add unit tests
 - Add commandline mode
 
-Completed:
-- Show difference between dates in 'whole' years and months ie: birthdays
-- Allow typing in date in From: or To: fields
+    Completed:
+    ====================
+    - Show difference between dates in 'whole' years and months ie: birthdays
+    - Allow typing in date in From: or To: fields
 

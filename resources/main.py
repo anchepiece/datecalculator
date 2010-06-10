@@ -77,12 +77,13 @@ if __name__ == '__main__':
 class DateCalculator(object):
 
     _application = None
-    date_formats = [
-        '%m-%d-%Y', '%d-%m-%Y', '%d-%b-%Y', '%d-%B-%Y', '%d-%m-%y',
-        '%d-%b-%y', '%d-%B-%y', '%Y-%m-%d', '%Y-%b-%d', '%Y-%B-%d',
-        '%m/%d/%Y', '%d/%m/%Y', '%d/%b/%Y', '%d/%B/%Y', '%d/%m/%y',
-        '%d/%b/%y', '%d/%B/%y', '%Y/%m/%d', '%Y/%b/%d', '%Y/%B/%d']
     format = '%m/%d/%Y'
+    date_formats = [
+        '%m/%d/%Y', '%m/%d/%y', '%b/%d/%Y', '%B/%d/%Y', '%b/%d/%y',
+        '%Y/%m/%d', '%y/%m/%d', '%Y/%b/%d', '%Y/%B/%d', '%y/%b/%d',
+        '%m-%d-%Y', '%m-%d-%y', '%b-%d-%Y', '%B-%d-%Y', '%b-%d-%y',
+        '%Y-%m-%d', '%y-%m-%d', '%Y-%b-%d', '%Y-%B-%d', '%y-%b-%d']
+
     updating = False
 
     def __init__(self):
@@ -157,6 +158,21 @@ class DateCalculator(object):
 
                 self.eventbox_swap_end = self.builder.get_object('eventbox_swap_end')
                 self.eventbox_swap_end.connect('button-press-event', self.on_eventbox_swap_button_press_event)
+
+                # add some tooltips
+                today = datetime.fromtimestamp(time.time())
+
+                tip = 'Enter date in %s format (%s)' % (self.format.replace('%', ''), today.strftime(self.format))
+                self.entry_start.set_tooltip_text(tip)
+                self.entry_end.set_tooltip_text(tip)
+
+                tip = 'Click to swap start and end dates'
+                self.eventbox_swap_start.set_tooltip_text(tip)
+                self.eventbox_swap_end.set_tooltip_text(tip)
+
+                tip = 'Click to set calendar date to today (%s)' % today.strftime(self.format)
+                self.eventbox_today_start.set_tooltip_text(tip)
+                self.eventbox_today_end.set_tooltip_text(tip)
 
             except AttributeError as (e):
                 logger.error("Failed loading UI element")
@@ -427,19 +443,19 @@ class DateCalculator(object):
             returns None if unable to match.
         """
         try:
-            date = date.strptime(text, self.format)
+            dt = datetime.strptime(text, self.format)
         except:
             pass
         else:
-            return date
+            return date(dt.year, dt.month, dt.day)
 
         for f in self.date_formats:
             try:
-                date = date.strptime(text, f)
+                dt = datetime.strptime(text, f)
             except:
                 pass
             else:
-                return date
+                return date(dt.year, dt.month, dt.day)
         return None
     #end def parse_date
 
@@ -503,17 +519,17 @@ class DateCalculator(object):
         date = self.parse_date(w.get_text())
         if date:
             self.start_date = date
-        if not self.updating:
-            self.gui_update()
+            if not self.updating:
+                self.gui_update()
     #end def on_entry_start_changed
 
     def on_entry_end_changed(self, w):
         self.log_caller()
         date = self.parse_date(w.get_text())
-        if date:
+        if not date == None:
             self.end_date = date
-        if not self.updating:
-            self.gui_update()
+            if not self.updating:
+                self.gui_update()
     #end def on_entry_start_changed
 
     def on_eventbox_swap_button_press_event(self, w, event):

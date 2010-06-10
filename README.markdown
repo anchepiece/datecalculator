@@ -21,15 +21,15 @@ Usage: python datecalculator.py --help --version --quiet --debug
             --quiet, hides all console messages
             --debug, run in debugging mode
 
+-------------------------------------------------------------------------------------------------------------------------
 To Do
 ====================
 - Create and installer/Makefile
 - Add usage examples
 - Add unit tests
 - Add commandline mode
-
-    Completed:
-    ====================
+Completed:
+====================
     - Show difference between dates in 'whole' years and months ie: birthdays
     - Allow typing in date in From: or To: fields
 

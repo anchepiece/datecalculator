@@ -358,7 +358,6 @@ class DateCalculator(object):
 
                 # Ok we have changes, so lets recalculate the difference
                 (self.diff_days, self.diff_months, self.diff_years) = self.calculate_diff(self.start_date, self.end_date)
-                self.recalulate_dates(self.start_date, self.end_date)
 
                 self.entry_days.set_text(str(self.diff_days))
                 self.entry_months.set_text(str(self.diff_months))
@@ -390,34 +389,36 @@ class DateCalculator(object):
         """
         logger.info('Dates  -> [%s] <-> [%s]' % (start_date, end_date))
         diff_timedelta = end_date - start_date
-        diff_days = diff_timedelta.days
+
         diff_years = end_date.year - start_date.year
         diff_months = end_date.month - start_date.month
-        diff_months = diff_months + diff_years * 12
+        diff_days = end_date.day - start_date.day
 
         whole_years = 0
-        whole_months = 0
-        if diff_months < 0:
-            whole_years += 1
-            whole_years += math.floor((diff_months-1)/12)
-            if (end_date.day > start_date.day):
+        whole_months = diff_months + diff_years * 12
+        if end_date < start_date:
+            # we have a negative timedelta
+            if diff_days < 0:
                 whole_months += 1
+            if whole_months < 0:
+                if diff_days > 0:
+                    whole_months += 1
+                whole_years = math.floor((whole_months-1)/12) + 1
+            else:
+                if diff_days < 0:
+                    whole_months -= 1
+                whole_years = math.floor((whole_months)/12)
         else:
-            whole_years += math.floor(diff_months/12)
-            if (end_date.day < start_date.day):
+            # we have a positive timedelta
+            if diff_days < 0:
                 whole_months -= 1
+            whole_years = math.floor((whole_months)/12)
 
-        whole_months += end_date.month - start_date.month
-        whole_months = whole_months + whole_years * 12
-        # now use whole_months to set the correct whole_years
-        whole_years = math.floor(whole_months/12)
-
-        diff_days   = int(diff_days)
-        diff_months = int(whole_months)
-        diff_years  = int(whole_years)
-        logger.info('Difference -> years:%s months:%s days:%s',
-            diff_years, diff_months, diff_days)
-        return diff_days, diff_months, diff_years
+        whole_years = int(whole_years)
+        whole_days  = int(diff_timedelta.days)
+        logger.info('Difference -> days:%s months:%s years:%s',
+            whole_days, whole_months, whole_years)
+        return (whole_days, whole_months, whole_years)
     #end def calculate_diff
 
     def parse_date(self, text):

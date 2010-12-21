@@ -54,7 +54,7 @@ import logging
 logger = logging.getLogger(__name__)
 from datetime import datetime, date
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __fullname__ = 'DateCalculator'
 __usage__ = \
 """
@@ -113,7 +113,9 @@ class DateCalculator(object):
             # use GtkBuilder to build our interface from the XML file
             try:
                 self.builder = gtk.Builder()
-                main_ui = 'resources/ui/main.ui'
+                #logger.info(os.path.dirname(sys.argv[0]))
+                # we are in the /resources subdirectory already
+                main_ui = os.path.join(os.path.dirname(__file__), 'ui/main.ui')
                 self.builder.add_from_file(main_ui)
             except:
                 logger.error("Failed to load UI file: %s" %  main_ui)
